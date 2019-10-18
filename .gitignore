@@ -1,0 +1,8 @@
+target
+logs
+.idea
+*.iml
+.flattened-pom.xml
+
+gen-java
+gen-go
