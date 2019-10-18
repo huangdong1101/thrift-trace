@@ -1,5 +1,6 @@
 package com.mamba.arch.trace.thrift;
 
+import com.mamba.arch.trace.thrift.util.ThriftUtils;
 import lombok.Getter;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TServiceClient;
@@ -43,13 +44,17 @@ public class TraceServiceClientInvocationHandler<T extends TServiceClient> imple
             //gen Args Instance
             TBase methodArgs = methodDesc.getArgsConstructor().newInstance(args);
             //wrap Args, set trace
-            TraceStruct proxyArgs = new TraceStruct<>(methodArgs);
+            TraceStruct<?> proxyArgs = new TraceStruct<>(methodArgs);
             //TODO write trace
             proxyArgs.setTrace(Collections.singletonMap("tid", "1234")); //TODO
             //do send
             this.sendBaseMethod.invoke(serviceClient, methodName, proxyArgs);
             //do receive
-            return methodDesc.getReceiveMethod().invoke(serviceClient);
+            Method receiveMethod = methodDesc.getReceiveMethod();
+            if (receiveMethod == null) {
+                return null;
+            }
+            return receiveMethod.invoke(serviceClient);
         } finally {
             this.serviceClientFactory.destroy(serviceClient);
         }
@@ -59,25 +64,12 @@ public class TraceServiceClientInvocationHandler<T extends TServiceClient> imple
         return (I) Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class<?>[]{interfaceClass}, this);
     }
 
-    private static <T extends TServiceClient> Map<String, MethodDesc> getServiceMethodDescMap(Class<T> clazz) throws NoSuchMethodException {
-        Map<String, Class<? extends TBase>> argsClasses = new HashMap<>();
-        for (Class<?> innerClass : clazz.getDeclaringClass().getClasses()) {
-            String name = innerClass.getSimpleName();
-            if (TBase.class.isAssignableFrom(innerClass) && name.endsWith("_args")) {
-                argsClasses.put(name.substring(0, name.length() - 5), (Class<? extends TBase>) innerClass);
-            }
-        }
+    private static <T extends TServiceClient> Map<String, MethodDesc> getServiceMethodDescMap(Class<T> clazz) throws Exception {
+        Map<String, Class<? extends TBase>> argsClasses = ThriftUtils.getArgsClasses(clazz.getDeclaringClass());
 
         Map<String, Method> sendMethods = new HashMap<>();
         Map<String, Method> receiveMethods = new HashMap<>();
-        for (Method method : clazz.getDeclaredMethods()) {
-            String name = method.getName();
-            if (name.startsWith("send_")) {
-                sendMethods.put(name.substring(5), method);
-            } else if (name.startsWith("recv_")) {
-                receiveMethods.put(name.substring(5), method);
-            }
-        }
+        ThriftUtils.findMethods(clazz, sendMethods, receiveMethods);
 
         Map<String, MethodDesc> proxyMethods = new HashMap<>((int) Math.ceil(argsClasses.size() / 0.75));
         for (Map.Entry<String, Class<? extends TBase>> entry : argsClasses.entrySet()) {
@@ -101,7 +93,7 @@ public class TraceServiceClientInvocationHandler<T extends TServiceClient> imple
 
         public MethodDesc(Method sendMethod, Method receiveMethod, Class<T> argsClass) throws NoSuchMethodException {
             this.sendMethod = Objects.requireNonNull(sendMethod);
-            this.receiveMethod = Objects.requireNonNull(receiveMethod);
+            this.receiveMethod = receiveMethod;
             this.argsConstructor = Objects.requireNonNull(argsClass.getConstructor(sendMethod.getParameterTypes()));
         }
     }
