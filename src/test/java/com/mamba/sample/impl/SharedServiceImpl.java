@@ -4,6 +4,7 @@ import com.mamba.arch.trace.thrift.TraceProcessor;
 import com.mamba.sample.face.SharedService;
 import com.mamba.sample.face.SharedStructIn;
 import com.mamba.sample.face.SharedStructOut;
+import org.apache.thrift.TBaseProcessor;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessorFactory;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 class SharedServiceImpl implements SharedService.Iface {
 
@@ -37,16 +39,20 @@ class SharedServiceImpl implements SharedService.Iface {
     }
 
     public static void main(String[] args) throws TTransportException {
-        serve(8089);
+//        serve(8089, false);
+        serve(8089, true);
     }
 
-    private static void serve(int port) throws TTransportException {
+    private static <I, F> void serve(int port, boolean trace) throws TTransportException {
         try (TNonblockingServerSocket socket = new TNonblockingServerSocket(port)) {
             LOGGER.info("=========Thrift server starting=======");
             LOGGER.info("Listen port: {}", port);
 
             SharedServiceImpl service = new SharedServiceImpl();
-            TraceProcessor<?> processor = new TraceProcessor<>(new SharedService.Processor<>(service));
+            TBaseProcessor<SharedServiceImpl> processor = new SharedService.Processor<>(service);
+            if (trace) {
+                processor = new TraceProcessor<>(processor);
+            }
 
             TNonblockingServer.Args arg = new TNonblockingServer.Args(socket);
             arg.protocolFactory(new TCompactProtocol.Factory());

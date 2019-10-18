@@ -22,7 +22,7 @@ class TraceServiceClientInvocationHandlerTests {
     void newProxyInstance() throws Exception {
         ServiceClientFactory<SharedService.Client> serviceClientFactory = new ServiceClientFactory<SharedService.Client>() {
             @Override
-            public SharedService.Client get() throws Exception{
+            public SharedService.Client get() throws Exception {
                 TSocket socket = new TSocket("0.0.0.0", 8089, 1000 * 10);
                 socket.open();
                 return new SharedService.Client(new TCompactProtocol(new TFramedTransport(socket)));
@@ -37,5 +37,15 @@ class TraceServiceClientInvocationHandlerTests {
         SharedService.Iface iface = invocationHandler.newProxyInstance(SharedService.Iface.class);
         iface.getStruct1(11, "xxx123", null);
         System.out.println();
+    }
+
+    @Test
+    void newProxyInstance1() throws Exception {
+        try (TSocket socket = new TSocket("0.0.0.0", 8089, 1000 * 10)) {
+            socket.open();
+            SharedService.Client client = new SharedService.Client(new TCompactProtocol(new TFramedTransport(socket)));
+            client.getStruct1(11, "xxx123", null);
+            System.out.println();
+        }
     }
 }
