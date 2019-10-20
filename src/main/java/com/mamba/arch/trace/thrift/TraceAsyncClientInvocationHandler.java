@@ -19,19 +19,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class TraceAsyncClientInvocationHandler<T extends TAsyncClient> implements InvocationHandler {
 
-    private final Supplier<T> asyncClientSupplier;
+    private final AsyncClientClientFactory<T> asyncClientFactory;
 
     private final Method sendBaseMethod;
 
     private final Map<String, MethodDesc> proxyMethods;
 
-    public TraceAsyncClientInvocationHandler(Supplier<T> asyncClientSupplier, Class<T> clazz) throws Exception {
+    public TraceAsyncClientInvocationHandler(AsyncClientClientFactory<T> asyncClientFactory, Class<T> clazz) throws Exception {
         Objects.requireNonNull(clazz);
-        this.asyncClientSupplier = Objects.requireNonNull(asyncClientSupplier);
+        this.asyncClientFactory = Objects.requireNonNull(asyncClientFactory);
 
         this.sendBaseMethod = TServiceClient.class.getDeclaredMethod("sendBase", String.class, TBase.class);
         this.sendBaseMethod.setAccessible(true);
@@ -42,7 +41,7 @@ public class TraceAsyncClientInvocationHandler<T extends TAsyncClient> implement
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String methodName = method.getName();
-        T asyncClient = this.asyncClientSupplier.get();
+        T asyncClient = this.asyncClientFactory.get();
         MethodDesc methodDesc = this.proxyMethods.get(methodName);
         if (methodDesc == null) {
             return method.invoke(asyncClient, args);

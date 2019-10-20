@@ -35,7 +35,7 @@ class TraceServiceClientInvocationHandlerTests {
         };
         TraceServiceClientInvocationHandler<SharedService.Client> invocationHandler = new TraceServiceClientInvocationHandler<>(serviceClientFactory, SharedService.Client.class);
         SharedService.Iface iface = invocationHandler.newProxyInstance(SharedService.Iface.class);
-        iface.getStruct1(11, "xxx123", null);
+        iface.getStruct(11, "xxx123", null);
         System.out.println();
     }
 
