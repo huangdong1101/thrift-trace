@@ -9,7 +9,6 @@ import org.apache.thrift.async.TAsyncMethodCall;
 import org.apache.thrift.protocol.TProtocol;
 
 import java.util.Collections;
-import java.util.function.Function;
 
 class TraceAsyncMethodCall<R> extends TAsyncMethodCall<R> {
 
@@ -17,9 +16,9 @@ class TraceAsyncMethodCall<R> extends TAsyncMethodCall<R> {
 
     private final TBase methodArgs;
 
-    private final Function<TProtocol, R> receiveFunction;
+    private final Invokable<TProtocol, R> receiveFunction;
 
-    public TraceAsyncMethodCall(TAsyncClient client, String methodName, TBase methodArgs, AsyncMethodCallback<R> callback, Function<TProtocol, R> receiveFunction) throws Exception {
+    public TraceAsyncMethodCall(TAsyncClient client, String methodName, TBase methodArgs, AsyncMethodCallback<R> callback, Invokable<TProtocol, R> receiveFunction) throws Exception {
         super(client, client.getProtocolFactory(), ThriftUtils.getTransport(client), callback, false);
         this.methodName = methodName;
         this.methodArgs = methodArgs;
@@ -49,6 +48,11 @@ class TraceAsyncMethodCall<R> extends TAsyncMethodCall<R> {
         if (this.receiveFunction == null) {
             return null;
         }
-        return this.receiveFunction.apply(prot);
+        return this.receiveFunction.invoke(prot);
+    }
+
+    interface Invokable<O, R> {
+
+        R invoke(O obj, Object... args) throws Exception;
     }
 }

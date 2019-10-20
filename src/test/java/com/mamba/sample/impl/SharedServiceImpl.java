@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 class SharedServiceImpl implements SharedService.Iface {
 
@@ -43,7 +42,7 @@ class SharedServiceImpl implements SharedService.Iface {
         serve(8089, true);
     }
 
-    private static <I, F> void serve(int port, boolean trace) throws TTransportException {
+    private static void serve(int port, boolean trace) throws TTransportException {
         try (TNonblockingServerSocket socket = new TNonblockingServerSocket(port)) {
             LOGGER.info("=========Thrift server starting=======");
             LOGGER.info("Listen port: {}", port);

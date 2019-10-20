@@ -1,5 +1,6 @@
 package com.mamba.arch.trace.thrift;
 
+import com.mamba.arch.trace.thrift.util.ThriftUtils;
 import org.apache.thrift.AsyncProcessFunction;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
@@ -7,8 +8,6 @@ import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.async.AsyncMethodCallback;
 import org.apache.thrift.server.AbstractNonblockingServer;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 
@@ -21,13 +20,7 @@ public class TraceAsyncProcessFunction<I, T extends TBase<T, TFieldIdEnum>, R> e
     public TraceAsyncProcessFunction(AsyncProcessFunction<I, T, R> function) {
         super(function.getMethodName());
         this.function = function;
-        try {
-            Method isOnewayMethod = function.getClass().getDeclaredMethod("isOneway");
-            isOnewayMethod.setAccessible(true);
-            this.oneway = (Boolean) isOnewayMethod.invoke(function);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException(e);
-        }
+        this.oneway = ThriftUtils.isOneway(function);
     }
 
     @Override

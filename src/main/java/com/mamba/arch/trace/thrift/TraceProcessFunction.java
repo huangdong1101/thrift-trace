@@ -1,5 +1,6 @@
 package com.mamba.arch.trace.thrift;
 
+import com.mamba.arch.trace.thrift.util.ThriftUtils;
 import org.apache.thrift.ProcessFunction;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
@@ -19,13 +20,7 @@ class TraceProcessFunction<I, T extends TBase<T, TFieldIdEnum>> extends ProcessF
     public TraceProcessFunction(ProcessFunction<I, T> function) {
         super(function.getMethodName());
         this.function = function;
-        try {
-            Method isOnewayMethod = function.getClass().getDeclaredMethod("isOneway");
-            isOnewayMethod.setAccessible(true);
-            this.oneway = (Boolean) isOnewayMethod.invoke(function);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException(e);
-        }
+        this.oneway = ThriftUtils.isOneway(function);
     }
 
     @Override

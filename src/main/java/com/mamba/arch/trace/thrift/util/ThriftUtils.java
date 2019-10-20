@@ -1,5 +1,7 @@
 package com.mamba.arch.trace.thrift.util;
 
+import org.apache.thrift.AsyncProcessFunction;
+import org.apache.thrift.ProcessFunction;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TServiceClient;
@@ -9,9 +11,11 @@ import org.apache.thrift.async.TAsyncMethodCall;
 import org.apache.thrift.transport.TNonblockingTransport;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public final class ThriftUtils {
 
@@ -81,5 +85,31 @@ public final class ThriftUtils {
                 receiveMethods.put(name.substring(5), method);
             }
         }
+    }
+
+    public static boolean isOneway(AsyncProcessFunction function) {
+        return isOneway((Object) function);
+    }
+
+    public static boolean isOneway(ProcessFunction function) {
+        return isOneway((Object) function);
+    }
+
+    private static boolean isOneway(Object function) {
+        try {
+            Method method = function.getClass().getDeclaredMethod("isOneway");
+            method.setAccessible(true);
+            return (Boolean) method.invoke(function);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static <K, VF, VT> Map<K, VT> transformValues(Map<K, VF> fromMap, Function<? super VF, VT> mapper) {
+        Map<K, VT> toMap = new HashMap<>((int) Math.ceil(fromMap.size() / 0.75));
+        for (Map.Entry<K, VF> entry : fromMap.entrySet()) {
+            toMap.put(entry.getKey(), mapper.apply(entry.getValue()));
+        }
+        return toMap;
     }
 }

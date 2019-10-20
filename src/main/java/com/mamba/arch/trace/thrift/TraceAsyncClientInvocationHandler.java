@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class TraceAsyncClientInvocationHandler<T extends TAsyncClient> implements InvocationHandler {
@@ -86,21 +85,25 @@ public class TraceAsyncClientInvocationHandler<T extends TAsyncClient> implement
             Class<? extends TBase> argsClass = entry.getValue();
             Constructor<? extends TBase> argsConstructor = argsClass.getConstructor(sendMethod.getParameterTypes());
             if (receiveMethod == null) {
-                proxyMethods.put(name, new MethodDesc(argsConstructor));
+                proxyMethods.put(name, new MethodDesc<>(argsConstructor));
             } else {
-                Function<TProtocol, Object> receiveFunction = protocol -> invokeReceiveMethod(protocol, serviceClientFactory, receiveMethod);
-                proxyMethods.put(name, new MethodDesc(argsConstructor, receiveFunction));
+                proxyMethods.put(name, new MethodDesc<>(argsConstructor, (protocol, args) -> invokeReceiveMethod(protocol, serviceClientFactory, receiveMethod)));
             }
         }
         return proxyMethods;
     }
 
-    private static Object invokeReceiveMethod(TProtocol protocol, TServiceClientFactory serviceClientFactory, Method receiveMethod) {
+    private static Object invokeReceiveMethod(TProtocol protocol, TServiceClientFactory serviceClientFactory, Method receiveMethod) throws Exception {
         TServiceClient serviceClient = serviceClientFactory.getClient(protocol);
         try {
             return receiveMethod.invoke(serviceClient);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException(e);
+        } catch (InvocationTargetException e) {
+            Throwable target = e.getTargetException();
+            if (target instanceof Exception) {
+                throw (Exception) target;
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -109,13 +112,13 @@ public class TraceAsyncClientInvocationHandler<T extends TAsyncClient> implement
 
         private final Constructor<T> argsConstructor;
 
-        private final Function<TProtocol, R> receiveFunction;
+        private final TraceAsyncMethodCall.Invokable<TProtocol, R> receiveFunction;
 
         public MethodDesc(Constructor<T> argsConstructor) {
             this(argsConstructor, null);
         }
 
-        public MethodDesc(Constructor<T> argsConstructor, Function<TProtocol, R> receiveFunction) {
+        public MethodDesc(Constructor<T> argsConstructor, TraceAsyncMethodCall.Invokable<TProtocol, R> receiveFunction) {
             this.argsConstructor = argsConstructor;
             this.receiveFunction = receiveFunction;
         }
