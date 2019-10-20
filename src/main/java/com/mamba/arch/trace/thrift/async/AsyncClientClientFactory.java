@@ -1,4 +1,4 @@
-package com.mamba.arch.trace.thrift;
+package com.mamba.arch.trace.thrift.async;
 
 import org.apache.thrift.async.TAsyncClient;
 

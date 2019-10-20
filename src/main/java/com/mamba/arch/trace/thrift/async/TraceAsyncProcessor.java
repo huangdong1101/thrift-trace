@@ -1,4 +1,4 @@
-package com.mamba.arch.trace.thrift;
+package com.mamba.arch.trace.thrift.async;
 
 import com.mamba.arch.trace.thrift.util.ThriftUtils;
 import org.apache.thrift.TBaseAsyncProcessor;

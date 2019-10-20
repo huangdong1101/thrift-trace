@@ -1,4 +1,4 @@
-package com.mamba.arch.trace.thrift;
+package com.mamba.arch.trace.thrift.async;
 
 import com.mamba.sample.face.SharedService;
 import com.mamba.sample.face.SharedStructOut;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 class TraceAsyncClientInvocationHandlerTests {
 
